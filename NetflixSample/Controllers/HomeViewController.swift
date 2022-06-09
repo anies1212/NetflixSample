@@ -17,6 +17,10 @@ enum Section: Int {
 
 class HomeViewController: UIViewController {
     
+    private var randomTrendingMovie: Title?
+    
+    private var headerView: HeroHeaderUIView?
+    
     private let homeFeedTable: UITableView = {
         let table = UITableView(frame: .zero, style: .grouped)
         table.register(CollectionViewTableViewCell.self, forCellReuseIdentifier: CollectionViewTableViewCell.identifier)
@@ -28,25 +32,48 @@ class HomeViewController: UIViewController {
     var upcomingMovies = [Title]()
     var topRated = [Title]()
     private let sectionTitles = ["Trending Movies", "Trending TV", "Popular", "Upcoming Movies", "Top Rated"]
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         homeFeedTable.delegate = self
         homeFeedTable.dataSource = self
-        let headerView = HeroHeaderUIView(frame: CGRect(x: 0, y: 0, width: view.frame.size.width, height: 450))
-        homeFeedTable.tableHeaderView = headerView
         configureNavBar()
         fetchTrendingMovie()
         fetchTrendingTVs()
         fetchUpcomingMovies()
         fetchPopularMovies()
         fetchTopRatedMovies()
+        configureHeaderHeroView()
         view.addSubview(homeFeedTable)
         view.backgroundColor = .systemBackground
+        
     }
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         homeFeedTable.frame = view.bounds
+    }
+    
+    private func configureHeaderHeroView(){
+        APICaller.shared.getTrendingMovies {[weak self] results in
+            guard let strongSelf = self else {return}
+            DispatchQueue.main.async {
+                switch results {
+                case .success(let movies):
+                    strongSelf.randomTrendingMovie = movies.randomElement()
+                    strongSelf.headerView = HeroHeaderUIView(frame: CGRect(x: 0, y: 0, width: strongSelf.view.frame.size.width, height: 450))
+                    guard let title = strongSelf.randomTrendingMovie?.original_title else {return}
+                    guard let url = strongSelf.randomTrendingMovie?.poster_path else {return}
+                    strongSelf.headerView?.configure(with: TitleViewModel(titleName: title, posterURL: url))
+                    strongSelf.homeFeedTable.tableHeaderView = strongSelf.headerView
+                    self?.homeFeedTable.reloadData()
+                    break
+                case .failure(let error):
+                    print(error.localizedDescription)
+                    break
+                }
+            }
+        }
     }
     
     private func configureNavBar(){
@@ -60,6 +87,8 @@ class HomeViewController: UIViewController {
         ]
         navigationController?.navigationBar.tintColor = .white
     }
+    
+
     
     private func fetchTrendingMovie(){
         APICaller.shared.getTrendingMovies {[weak self] results in
@@ -138,9 +167,19 @@ class HomeViewController: UIViewController {
             
         }
     }
-
-
 }
+extension HomeViewController: CollectionViewTableViewCellDelegate {
+    
+    func didTappedCollectionViewCell(_ cell: CollectionViewTableViewCell, viewModel: TitlePreviewViewModel) {
+        DispatchQueue.main.async {[weak self] in
+            let vc = TitlePreviewViewController()
+            vc.configure(with: viewModel)
+            self?.navigationController?.pushViewController(vc, animated: true)
+        }
+    }
+    
+}
+
 
 extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     
@@ -157,17 +196,22 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
         switch indexPath.section {
         case Section.trendingMovies.rawValue:
             cell.configure(with: trendingMovies)
+            cell.delegate = self
         case Section.trendingTVs.rawValue:
             cell.configure(with: trendingTVs)
+            cell.delegate = self
             break
         case Section.popular.rawValue:
             cell.configure(with: populars)
+            cell.delegate = self
             break
         case Section.upcomingMovies.rawValue:
             cell.configure(with: upcomingMovies)
+            cell.delegate = self
             break
         case Section.topRated.rawValue:
             cell.configure(with: topRated)
+            cell.delegate = self
             break
         default:
             return UITableViewCell()

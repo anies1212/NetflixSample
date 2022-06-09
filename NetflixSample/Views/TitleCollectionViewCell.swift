@@ -11,7 +11,7 @@ import SDWebImage
 class TitleCollectionViewCell: UICollectionViewCell {
     
     static let identifier = "TitleCollectionViewCell"
-    let baseURL = "https://image.tmdb.org/t/p/w500"
+    
     
     private let posterImageView: UIImageView = {
         let imageView = UIImageView()
@@ -38,6 +38,7 @@ class TitleCollectionViewCell: UICollectionViewCell {
     }
     
     func configure(with model: Title){
+        let baseURL = Constants.imageBaseURL
         guard let posterURL = model.poster_path else {return}
         posterImageView.sd_setImage(with: URL(string: baseURL + posterURL))
     }

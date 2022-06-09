@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SDWebImage
 
 class HeroHeaderUIView: UIView {
     
@@ -13,7 +14,6 @@ class HeroHeaderUIView: UIView {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
-        imageView.image = UIImage(named: "StrangerThingsImage")
         return imageView
     }()
     
@@ -80,6 +80,12 @@ class HeroHeaderUIView: UIView {
             downlodButton.widthAnchor.constraint(equalToConstant: 120)
         ]
         NSLayoutConstraint.activate(downlodButtonConstraints)
+    }
+    
+    func configure(with model: TitleViewModel){
+        let url = Constants.imageBaseURL + model.posterURL
+        print("url:\(url)")
+        heroImageView.sd_setImage(with: URL(string: url))
     }
     
 
