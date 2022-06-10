@@ -8,6 +8,11 @@
 import UIKit
 import SDWebImage
 
+protocol HeroHeaderUIViewDelegate: AnyObject {
+    func didTappedPlayButton(_ model: TitleViewModel)
+    func didTappedDownloadButton(_ model: TitleViewModel)
+}
+
 class HeroHeaderUIView: UIView {
     
     private let heroImageView: UIImageView = {
@@ -16,6 +21,8 @@ class HeroHeaderUIView: UIView {
         imageView.clipsToBounds = true
         return imageView
     }()
+    
+    var model : TitleViewModel?
     
     private let downlodButton: UIButton = {
         let button = UIButton()
@@ -40,14 +47,30 @@ class HeroHeaderUIView: UIView {
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
+    
+    weak var delegate: HeroHeaderUIViewDelegate?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         addSubview(heroImageView)
         addGradient()
         addSubview(playButton)
+        playButton.addTarget(self, action: #selector(tappedPlayButton), for: .touchUpInside)
         addSubview(downlodButton)
+        downlodButton.addTarget(self, action: #selector(tappedDownloadButton), for: .touchUpInside)
         applyConstraints()
+    }
+    
+    @objc func tappedDownloadButton(){
+        guard let model = model else {
+            return
+        }
+        delegate?.didTappedDownloadButton(model)
+    }
+    
+    @objc func tappedPlayButton(){
+        guard let model = model else {return}
+        delegate?.didTappedPlayButton(model)
     }
     
     required init?(coder: NSCoder) {
@@ -83,6 +106,7 @@ class HeroHeaderUIView: UIView {
     }
     
     func configure(with model: TitleViewModel){
+        self.model = model
         let url = Constants.imageBaseURL + model.posterURL
         print("url:\(url)")
         heroImageView.sd_setImage(with: URL(string: url))

@@ -65,7 +65,7 @@ extension UpcomingViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: TitleTableViewCell.identifier, for: indexPath) as! TitleTableViewCell
-        cell.configure(with: TitleViewModel(titleName: models[indexPath.row].original_title ?? "Unknown", posterURL: models[indexPath.row].poster_path ?? ""))
+        cell.configure(with: TitleViewModel(titleName: models[indexPath.row].original_title ?? "Unknown", posterURL: models[indexPath.row].poster_path ?? "" , overview: models[indexPath.row].overview ?? ""))
         cell.delegate = self
         return cell
     }

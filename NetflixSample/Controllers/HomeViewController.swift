@@ -62,9 +62,11 @@ class HomeViewController: UIViewController {
                 case .success(let movies):
                     strongSelf.randomTrendingMovie = movies.randomElement()
                     strongSelf.headerView = HeroHeaderUIView(frame: CGRect(x: 0, y: 0, width: strongSelf.view.frame.size.width, height: 450))
+                    strongSelf.headerView?.delegate = self
                     guard let title = strongSelf.randomTrendingMovie?.original_title else {return}
                     guard let url = strongSelf.randomTrendingMovie?.poster_path else {return}
-                    strongSelf.headerView?.configure(with: TitleViewModel(titleName: title, posterURL: url))
+                    guard let overview = strongSelf.randomTrendingMovie?.overview else {return}
+                    strongSelf.headerView?.configure(with: TitleViewModel(titleName: title, posterURL: url, overview: overview))
                     strongSelf.homeFeedTable.tableHeaderView = strongSelf.headerView
                     self?.homeFeedTable.reloadData()
                     break
@@ -168,6 +170,28 @@ class HomeViewController: UIViewController {
         }
     }
 }
+
+extension HomeViewController: HeroHeaderUIViewDelegate {
+    
+    func didTappedPlayButton(_ model: TitleViewModel) {
+        
+        APICaller.shared.getYoutubeMovie(with: model.titleName) { [weak self] results in
+            DispatchQueue.main.async {
+                switch results {
+                case .success(let video):
+                    let vc = TitlePreviewViewController()
+                    vc.configure(with: TitlePreviewViewModel(title: model.titleName, overview: model.overview, youtubeVideo: video))
+                    self?.navigationController?.pushViewController(vc, animated: true)
+                case .failure(let error):
+                    print(error)
+                }
+            }
+            
+        }
+    }
+    
+}
+
 extension HomeViewController: CollectionViewTableViewCellDelegate {
     
     func didTappedCollectionViewCell(_ cell: CollectionViewTableViewCell, viewModel: TitlePreviewViewModel) {
@@ -175,6 +199,19 @@ extension HomeViewController: CollectionViewTableViewCellDelegate {
             let vc = TitlePreviewViewController()
             vc.configure(with: viewModel)
             self?.navigationController?.pushViewController(vc, animated: true)
+        }
+    }
+    
+    func didTappedDownloadButton(_ model: TitleViewModel) {
+
+        DataPersistenceManager.shared.dowloadTitle(with: Title(id: randomTrendingMovie?.id ?? 0, media_type: randomTrendingMovie?.media_type, original_name: randomTrendingMovie?.original_name, original_title: randomTrendingMovie?.original_title ?? randomTrendingMovie?.original_name ?? "", poster_path: randomTrendingMovie?.poster_path, overview: randomTrendingMovie?.overview, vote_count: randomTrendingMovie?.vote_count ?? 0, release_date: randomTrendingMovie?.release_date, vote_average: randomTrendingMovie?.vote_average ?? 0)) { results in
+            switch results {
+            case .success(()):
+                print("Download Succeeded")
+                NotificationCenter.default.post(name: NSNotification.Name("downloaded"), object: nil)
+            case .failure(let error):
+                print(error.localizedDescription)
+            }
         }
     }
     
