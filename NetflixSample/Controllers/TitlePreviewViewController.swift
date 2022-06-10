@@ -18,6 +18,8 @@ class TitlePreviewViewController: UIViewController {
         return label
     }()
     
+    private var model : TitlePreviewViewModel?
+    private var downloadModel: Title?
     
     private let overviewLabel: UILabel = {
         let label = UILabel()
@@ -49,12 +51,42 @@ class TitlePreviewViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .black
+        getData()
         view.addSubview(webView)
         view.addSubview(titleLabel)
         view.addSubview(overviewLabel)
         view.addSubview(downloadButton)
+        downloadButton.addTarget(self, action: #selector(tappedDownload), for: .touchUpInside)
         let leftBarButtonItem = UIBarButtonItem(title: "< Back", style: .done, target: self, action: #selector(goBack))
         navigationController?.navigationItem.leftBarButtonItem = leftBarButtonItem
+    }
+    
+    private func getData(){
+        guard let model = model else {
+            return
+        }
+        APICaller.shared.searchMovies(query: model.title) { [weak self] results in
+            switch results {
+            case .success(let title):
+                self?.downloadModel = title[0]
+            case .failure(let error):
+                print(error.localizedDescription)
+            }
+        }
+    }
+    
+    @objc func tappedDownload(){
+        guard let downloadModel = downloadModel else {
+            return
+        }
+        DataPersistenceManager.shared.dowloadTitle(with: downloadModel) { result in
+            switch result {
+            case .success(()):
+                NotificationCenter.default.post(name: NSNotification.Name("downloaded"), object: nil)
+            case .failure(let error):
+                print(error)
+            }
+        }
     }
     
     @objc func goBack(){
@@ -95,6 +127,7 @@ class TitlePreviewViewController: UIViewController {
     }
     
     func configure(with model: TitlePreviewViewModel){
+        self.model = model
         titleLabel.text = model.title
         overviewLabel.text = model.overview
         guard let url = URL(string: "https://www.youtube.com/embed/\(model.youtubeVideo.id.videoId)") else {return}
