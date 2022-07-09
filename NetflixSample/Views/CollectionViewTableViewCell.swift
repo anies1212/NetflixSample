@@ -61,7 +61,6 @@ class CollectionViewTableViewCell: UITableViewCell {
                 print(error.localizedDescription)
             }
         }
-        
     }
 
 }

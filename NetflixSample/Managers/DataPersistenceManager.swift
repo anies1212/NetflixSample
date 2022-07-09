@@ -19,7 +19,7 @@ class DataPersistenceManager {
     
     static let shared = DataPersistenceManager()
     
-    func dowloadTitle(with model: Title, completion: @escaping (Result<Void, Error>)-> Void){
+    func dowloadTitle(with model: Title, completion: @escaping (Result<Void, Error>)-> Void) {
         guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
             return
         }
